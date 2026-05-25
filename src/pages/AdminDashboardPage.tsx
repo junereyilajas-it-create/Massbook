@@ -19,12 +19,17 @@ function AdminDashboardPage() {
   const [selectedTab, setSelectedTab] = useState<'Week' | 'Month'>('Week');
   const [message, setMessage] = useState('');
   const [loadingPending, setLoadingPending] = useState(true);
+  const [showAnnouncementModal, setShowAnnouncementModal] = useState(false);
+  const [announcementTitle, setAnnouncementTitle] = useState('');
+  const [announcementMessage, setAnnouncementMessage] = useState('');
+  const [announcementType, setAnnouncementType] = useState('general');
+  const [isCreatingAnnouncement, setIsCreatingAnnouncement] = useState(false);
 
   useEffect(() => {
     // Fetch pending requests
     apiFetch('/requests')
       .then((data) => {
-        const pending = Array.isArray(data) 
+        const pending = Array.isArray(data)
           ? data.filter((r: any) => r.status === 'Pending' || r.status === 'pending').slice(0, 5)
           : [];
         setPendingItems(pending);
@@ -33,32 +38,43 @@ function AdminDashboardPage() {
       .finally(() => setLoadingPending(false));
   }, []);
 
-  const handleApprove = async (id: number, title: string) => {
-    try {
-      await apiFetch(`/requests/${id}/approve`, { method: 'POST' });
-      setPendingItems((prev) => prev.filter((item) => item.id !== id));
-      setMessage(`${title} approved and added to schedule.`);
-    } catch (error) {
-      setMessage(`Error approving request: ${(error as Error).message}`);
-    }
-  };
-
-  const handleDecline = async (id: number, title: string) => {
-    try {
-      await apiFetch(`/requests/${id}/decline`, { method: 'POST' });
-      setPendingItems((prev) => prev.filter((item) => item.id !== id));
-      setMessage(`${title} declined.`);
-    } catch (error) {
-      setMessage(`Error declining request: ${(error as Error).message}`);
-    }
-  };
-
-  const handleReports = () => {
-    setMessage('Opening report view...');
-  };
-
   const handleTabChange = (tab: 'Week' | 'Month') => {
     setSelectedTab(tab);
+  };
+
+  const handleCreateAnnouncement = async () => {
+    if (!announcementTitle || !announcementMessage) {
+      setMessage('Please fill in both title and message.');
+      return;
+    }
+
+    setIsCreatingAnnouncement(true);
+    try {
+      await apiFetch('/announcements', {
+        method: 'POST',
+        body: JSON.stringify({
+          title: announcementTitle,
+          message: announcementMessage,
+          type: announcementType,
+        }),
+      });
+      setMessage('Announcement created successfully!');
+      setAnnouncementTitle('');
+      setAnnouncementMessage('');
+      setAnnouncementType('general');
+      setShowAnnouncementModal(false);
+    } catch {
+      setMessage('Failed to create announcement. Please try again.');
+    } finally {
+      setIsCreatingAnnouncement(false);
+    }
+  };
+
+  const handleOpenAnnouncementModal = () => {
+    setShowAnnouncementModal(true);
+    setAnnouncementTitle('');
+    setAnnouncementMessage('');
+    setAnnouncementType('general');
   };
 
   return (
@@ -77,14 +93,9 @@ function AdminDashboardPage() {
                     <strong>{item.title || item.type}</strong>
                     <p className="body-text">{item.event_date ? new Date(item.event_date).toLocaleDateString() : 'TBD'} • {item.location || 'Location TBD'}</p>
                   </div>
-                  <div className="approval-actions">
-                    <button className="ghost-link" type="button" onClick={() => handleDecline(item.id, item.title || item.type)}>
-                      ✕
-                    </button>
-                    <button className="ghost-link" type="button" onClick={() => handleApprove(item.id, item.title || item.type)}>
-                      ✓
-                    </button>
-                  </div>
+                  <Link to={`/pending-approvals/${item.id}`} className="ghost-link">
+                    Review
+                  </Link>
                 </div>
               ))
             ) : !loadingPending ? (
@@ -119,10 +130,16 @@ function AdminDashboardPage() {
                 <strong>Edit Schedule</strong>
               </div>
             </Link>
-            <button className="action-card" type="button" onClick={handleReports}>
+            <Link to="/admin/reports" className="action-card">
               <span>📄</span>
               <div>
                 <strong>Reports</strong>
+              </div>
+            </Link>
+            <button className="action-card" onClick={handleOpenAnnouncementModal}>
+              <span>📢</span>
+              <div>
+                <strong>Create Announcement</strong>
               </div>
             </button>
           </div>
@@ -131,8 +148,8 @@ function AdminDashboardPage() {
         <div className="panel priest-assignments-card">
           <div className="assignments-header">
             <div>
-              <div className="section-heading">Priest Assignments</div>
-              <p className="body-text">October 2023</p>
+              <div className="section-heading">Schedules</div>
+              <p className="body-text">{new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</p>
             </div>
             <div className="assignments-tabs">
               <button
@@ -169,6 +186,64 @@ function AdminDashboardPage() {
           </div>
         </div>
       </section>
+
+      {showAnnouncementModal && (
+        <div className="modal-overlay" onClick={() => setShowAnnouncementModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Create Announcement</h2>
+              <button className="modal-close" onClick={() => setShowAnnouncementModal(false)}>×</button>
+            </div>
+            <div className="modal-body">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div>
+                  <label className="small-label">Title</label>
+                  <input
+                    className="input-field"
+                    type="text"
+                    value={announcementTitle}
+                    onChange={(e) => setAnnouncementTitle(e.target.value)}
+                    placeholder="Announcement title"
+                  />
+                </div>
+                <div>
+                  <label className="small-label">Type</label>
+                  <select
+                    className="input-field"
+                    value={announcementType}
+                    onChange={(e) => setAnnouncementType(e.target.value)}
+                  >
+                    <option value="general">General</option>
+                    <option value="feast">Feast/Special Event</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="small-label">Message</label>
+                  <textarea
+                    className="input-field"
+                    value={announcementMessage}
+                    onChange={(e) => setAnnouncementMessage(e.target.value)}
+                    placeholder="Announcement message"
+                    rows={3}
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button className="button button-secondary" onClick={() => setShowAnnouncementModal(false)}>
+                Cancel
+              </button>
+              <button
+                className="button button-primary"
+                onClick={handleCreateAnnouncement}
+                disabled={isCreatingAnnouncement}
+              >
+                {isCreatingAnnouncement ? 'Creating...' : 'Create Announcement'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </MainLayout>
   );
 }

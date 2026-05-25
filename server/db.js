@@ -27,15 +27,7 @@ export async function initializeDatabase() {
 
   const initConnection = await pool.getConnection();
   try {
-    await initConnection.query('SET FOREIGN_KEY_CHECKS = 0');
-    await initConnection.query('DROP TABLE IF EXISTS submitted_requirements');
-    await initConnection.query('DROP TABLE IF EXISTS requirements');
-    await initConnection.query('DROP TABLE IF EXISTS events');
-    await initConnection.query('DROP TABLE IF EXISTS event_types');
-    await initConnection.query('DROP TABLE IF EXISTS schedules');
-    await initConnection.query('DROP TABLE IF EXISTS support_tickets');
-    await initConnection.query('DROP TABLE IF EXISTS users');
-    await initConnection.query('SET FOREIGN_KEY_CHECKS = 1');
+
 
     await initConnection.query(`
       CREATE TABLE IF NOT EXISTS users (
@@ -108,6 +100,18 @@ export async function initializeDatabase() {
         message TEXT NOT NULL,
         status VARCHAR(50) NOT NULL DEFAULT 'Open',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      ) ENGINE=InnoDB
+    `);
+
+    await initConnection.query(`
+      CREATE TABLE IF NOT EXISTS announcements (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        title VARCHAR(255) NOT NULL,
+        message TEXT NOT NULL,
+        type VARCHAR(50) DEFAULT 'general',
+        is_active BOOLEAN DEFAULT true,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
       ) ENGINE=InnoDB
     `);
   } finally {

@@ -1,6 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useEffect, useRef, useState } from 'react';
-import HeaderSearch from './HeaderSearch';
 
 function HeaderBar() {
   const navigate = useNavigate();
@@ -26,17 +25,7 @@ function HeaderBar() {
 
   return (
     <div className="header-bar">
-      <div className="brand-strip">
-        <div className="brand-icon">MB</div>
-        <div>
-          <p className="small-label">MassBook</p>
-          <strong>Parish Administration</strong>
-        </div>
-      </div>
-      <div className="header-search">
-        <HeaderSearch />
-      </div>
-      <div className="header-actions">
+      <div className="header-actions" style={{ marginLeft: 'auto' }}>
         <div className="profile-menu-wrapper" ref={menuRef}>
           <button
             type="button"
@@ -46,7 +35,10 @@ function HeaderBar() {
             aria-haspopup="menu"
             aria-label="Open user menu"
           >
-            JD
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
           </button>
           {menuOpen && (
             <div className="profile-menu">

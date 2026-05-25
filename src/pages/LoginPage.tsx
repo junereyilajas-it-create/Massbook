@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { apiFetch } from '../utils/api';
 
@@ -8,15 +8,37 @@ function LoginPage() {
   const [password, setPassword] = useState('');
   const [remember, setRemember] = useState(false);
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   const trimmedEmail = email.trim().toLowerCase();
-  const isFormValid = trimmedEmail.length > 0 && trimmedEmail.includes('@') && password.length >= 8;
+  const emailError = trimmedEmail.length > 0 && !trimmedEmail.includes('@') ? 'Please include @ in your email address' : '';
+  const passwordError = '';
+  const isFormValid = trimmedEmail.length > 0 && trimmedEmail.includes('@') && password.length > 0;
+
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (e.key === 'Enter' && isFormValid && !isLoading) {
+        e.preventDefault();
+        handleLogin();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyPress);
+    return () => document.removeEventListener('keydown', handleKeyPress);
+  }, [isFormValid, isLoading, email, password]);
 
   const handleLogin = async () => {
-    if (!isFormValid) {
-      setError('Please enter a valid email and password.');
+    if (!trimmedEmail || !trimmedEmail.includes('@')) {
+      setError('Please enter a valid email address (e.g., user@example.com).');
       return;
     }
+    if (!password) {
+      setError('Please enter your password.');
+      return;
+    }
+
+    setIsLoading(true);
+    setError('');
 
     try {
       const user = await apiFetch('/login', {
@@ -31,10 +53,18 @@ function LoginPage() {
       } else {
         localStorage.removeItem('remember');
       }
-      setError('');
       navigate(user.role === 'admin' ? '/admin-dashboard' : '/dashboard');
     } catch (loginError) {
-      setError((loginError as Error).message);
+      const errorMessage = (loginError as Error).message;
+      if (errorMessage.includes('401') || errorMessage.toLowerCase().includes('invalid')) {
+        setError('Invalid email or password. Please check your credentials and try again.');
+      } else if (errorMessage.includes('network') || errorMessage.toLowerCase().includes('fetch')) {
+        setError('Unable to connect to the server. Please check your internet connection and try again.');
+      } else {
+        setError('An error occurred during login. Please try again later.');
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -49,7 +79,13 @@ function LoginPage() {
         noValidate
       >
         <div className="login-brand">
-          <div className="brand-icon large">MB</div>
+          <img
+            className="brand-icon large"
+            src="https://scontent.fceb1-3.fna.fbcdn.net/v/t39.30808-6/276156596_125507780061132_6269600553415109799_n.jpg?_nc_cat=106&ccb=1-7&_nc_sid=6ee11a&_nc_eui2=AeG9UfAzafALCboy4uwHQtt-wkSZm6otrfDCRJmbqi2t8JAgK9g3KbqdCvjQAoTZGu54LGxP_bHXtzSr8mWvor4f&_nc_ohc=M_EcETu3uqwQ7kNvwHx6mrk&_nc_oc=Adq_mBBCGDExTXhMELdbE7bvtStR4LMVVyBDZ_OWWxDd-_vvJ236s7MxYojFouteO9o&_nc_zt=23&_nc_ht=scontent.fceb1-3.fna&_nc_gid=oGxunlUH92DonYK4rz_mpQ&_nc_ss=7b2a8&oh=00_Af6bBtUZV1tShdGUh1riUUwIC2Wt5DRFG4XwaY19VAwFEw&oe=6A1458DC"
+            alt="MassBook Logo"
+            style={{ objectFit: 'cover' }}
+            referrerPolicy="no-referrer"
+          />
           <div>
             <h2>MassBook</h2>
             <p className="body-text">Parish Administration Portal</p>
@@ -74,7 +110,14 @@ function LoginPage() {
             placeholder="administrator@parish.org"
             value={email}
             onChange={(event) => setEmail(event.target.value)}
+            aria-invalid={!!emailError}
+            aria-describedby={emailError ? 'email-error' : undefined}
           />
+          {emailError && (
+            <p id="email-error" className="body-text" style={{ color: '#c53030', fontSize: '0.85rem', marginTop: '4px' }}>
+              {emailError}
+            </p>
+          )}
         </div>
 
         <div className="field-card">
@@ -89,7 +132,14 @@ function LoginPage() {
             placeholder="••••••••"
             value={password}
             onChange={(event) => setPassword(event.target.value)}
+            aria-invalid={!!passwordError}
+            aria-describedby={passwordError ? 'password-error' : undefined}
           />
+          {passwordError && (
+            <p id="password-error" className="body-text" style={{ color: '#c53030', fontSize: '0.85rem', marginTop: '4px' }}>
+              {passwordError}
+            </p>
+          )}
           <div className="text-right">
             <button className="ghost-link" type="button">
               Forgot Password?
@@ -107,8 +157,8 @@ function LoginPage() {
         </label>
 
         <div className="login-actions">
-          <button className="button button-primary" type="submit" disabled={!isFormValid}>
-            Login
+          <button className="button button-primary" type="submit" disabled={!isFormValid || isLoading}>
+            {isLoading ? 'Logging in...' : 'Login'}
           </button>
         </div>
 

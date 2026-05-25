@@ -35,12 +35,98 @@ function AdminMassSchedulePage() {
   const [massForm, setMassForm] = useState<MassEntry>(initialFormState);
   const [showForm, setShowForm] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [viewMode, setViewMode] = useState<'today' | 'weekly' | 'monthly'>('today');
+  const [filterMode, setFilterMode] = useState<'all' | 'ordinary' | 'feasts'>('all');
+  const [currentMonth, setCurrentMonth] = useState(new Date());
+
+  const filteredSchedule = schedule.filter((slot) => {
+    if (filterMode === 'feasts') return slot.title?.toLowerCase().includes('feast');
+    if (filterMode === 'ordinary') return !slot.title?.toLowerCase().includes('feast');
+    return true;
+  });
 
   useEffect(() => {
     apiFetch('/schedules')
       .then((data) => setSchedule(data))
       .catch((error) => setSuccessMessage(`Unable to load schedule: ${error.message}`));
   }, []);
+
+  const getCurrentWeekRange = () => {
+    const now = new Date();
+    const start = new Date(now);
+    start.setDate(now.getDate() - now.getDay());
+    const end = new Date(start);
+    end.setDate(start.getDate() + 6);
+    return `${start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} – ${end.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+  };
+
+  const getCurrentMonthRange = () => {
+    return currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  };
+
+  const handlePreviousMonth = () => {
+    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1));
+  };
+
+  const handleNextMonth = () => {
+    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1));
+  };
+
+  const handleGoToToday = () => {
+    setCurrentMonth(new Date());
+    setViewMode('today');
+    setFilterMode('all');
+  };
+
+  const getTodaySchedule = () => {
+    const today = new Date();
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const dayName = dayNames[today.getDay()];
+    return filteredSchedule.filter(slot => slot.day === dayName);
+  };
+
+  const getWeekSchedule = () => {
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    return dayNames.map(dayName => ({
+      day: dayName,
+      schedules: filteredSchedule.filter(slot => slot.day === dayName)
+    }));
+  };
+
+  const getMonthName = (date: Date) => {
+    return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  };
+
+  const getCalendarDays = (date: Date) => {
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const startDay = firstDay.getDay();
+    const totalDays = lastDay.getDate();
+    
+    const days = [];
+    for (let i = 0; i < startDay; i++) {
+      days.push(null);
+    }
+    for (let i = 1; i <= totalDays; i++) {
+      days.push(new Date(year, month, i));
+    }
+    return days;
+  };
+
+  const isToday = (date: Date) => {
+    const today = new Date();
+    return date.getDate() === today.getDate() &&
+           date.getMonth() === today.getMonth() &&
+           date.getFullYear() === today.getFullYear();
+  };
+
+  const getScheduleForDay = (date: Date) => {
+    const dateString = date.toISOString().split('T')[0];
+    return filteredSchedule.filter(slot => slot.date === dateString);
+  };
 
   const updateForm = (field: keyof MassEntry, value: string) => {
     setMassForm((prev) => ({ ...prev, [field]: value }));
@@ -75,8 +161,10 @@ function AdminMassSchedulePage() {
       setMassForm(initialFormState);
       setShowForm(false);
       setSuccessMessage('Mass added successfully.');
+      setShowSuccessModal(true);
     } catch (error) {
       setSuccessMessage(`Could not add mass: ${(error as Error).message}`);
+      setShowSuccessModal(true);
     }
   };
 
@@ -89,21 +177,54 @@ function AdminMassSchedulePage() {
       />
 
       <section className="schedule-page">
-        <div className="schedule-header">
-          <div className="schedule-tabs">
-            <button className="button button-secondary active">Weekly View</button>
-            <button className="button button-secondary">Monthly View</button>
-          </div>
-          <div className="schedule-filters">
-            <span className="filter-pill active">All Services</span>
-            <span className="filter-pill">Ordinary Time</span>
-            <span className="filter-pill">Feasts</span>
-          </div>
-          <div className="schedule-actions">
+        <div className="panel priest-assignments-card">
+          <div className="assignments-header">
+            <div className="assignments-tabs">
+              <button
+                className={`tab ${viewMode === 'today' ? 'active' : ''}`}
+                type="button"
+                onClick={() => setViewMode('today')}
+              >
+                Today
+              </button>
+              <button
+                className={`tab ${viewMode === 'weekly' ? 'active' : ''}`}
+                type="button"
+                onClick={() => setViewMode('weekly')}
+              >
+                Week
+              </button>
+              <button
+                className={`tab ${viewMode === 'monthly' ? 'active' : ''}`}
+                type="button"
+                onClick={() => setViewMode('monthly')}
+              >
+                Month
+              </button>
+            </div>
             <button className="button button-primary" onClick={() => setShowForm((prev) => !prev)}>
               {showForm ? 'Cancel' : 'Add Mass'}
             </button>
           </div>
+          {viewMode === 'monthly' && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginTop: '12px', fontSize: '1.2rem', fontWeight: '600' }}>
+              <button 
+                className="button button-secondary" 
+                onClick={handlePreviousMonth}
+                style={{ padding: '8px 16px', fontSize: '1.2rem' }}
+              >
+                ←
+              </button>
+              <span>{currentMonth.toLocaleDateString('en-US', { month: 'long' })} {currentMonth.getFullYear()}</span>
+              <button 
+                className="button button-secondary" 
+                onClick={handleNextMonth}
+                style={{ padding: '8px 16px', fontSize: '1.2rem' }}
+              >
+                →
+              </button>
+            </div>
+          )}
         </div>
 
         {showForm && (
@@ -130,18 +251,6 @@ function AdminMassSchedulePage() {
                     <option>Sunday Mass</option>
                     <option>Wedding Mass</option>
                     <option>Baptism Mass</option>
-                  </select>
-                </div>
-
-                <div className="field-card">
-                  <span className="small-label">Celebrant Assignment</span>
-                  <select
-                    value={massForm.celebrant}
-                    onChange={(event) => updateForm('celebrant', event.target.value)}
-                  >
-                    <option>Fr. Niel Limbaco</option>
-                    <option>Fr. Thomas Aquinas</option>
-                    <option>Fr. Miguel Santos</option>
                   </select>
                 </div>
 
@@ -183,17 +292,6 @@ function AdminMassSchedulePage() {
                   />
                 </div>
 
-                <div className="field-card">
-                  <span className="small-label">Stipend Status</span>
-                  <select
-                    value={massForm.stipend}
-                    onChange={(event) => updateForm('stipend', event.target.value)}
-                  >
-                    <option>Standard</option>
-                    <option>Waived</option>
-                  </select>
-                </div>
-
                 <div className="modal-fieldset full-width">
                   <div className="modal-fieldset-heading">Internal Administrative Notes</div>
                   <textarea
@@ -217,51 +315,96 @@ function AdminMassSchedulePage() {
           </div>
         )}
 
-        {successMessage && <div className="success-banner">{successMessage}</div>}
-
-        <div className="schedule-board">
-          <div className="schedule-range">
-            <span>October 21 – 27, 2024</span>
-            <button className="ghost-link">Go to Today</button>
-          </div>
-          <div className="schedule-grid">
-            {schedule.map((slot, index) => (
-              <div
-                key={`${slot.day}-${slot.time}-${index}`}
-                className={`schedule-card ${slot.day === 'Wed' ? 'active-day' : ''}`}
-              >
-                <span className="schedule-time">{slot.time}</span>
-                <strong>{slot.title}</strong>
-                <p className="body-text">{slot.day}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {addedMasses.length > 0 && (
-          <section className="panel added-mass-list">
-            <div className="section-heading">Recently Added Masses</div>
-            <div className="list-card">
-              {addedMasses.map((mass, index) => (
-                <div key={`${mass.date}-${mass.time}-${index}`} className="list-item">
-                  <div>
-                    <strong>{mass.massType}</strong>
-                    <span className="body-text">
-                      {mass.date} • {mass.time} • {mass.celebrant}
-                    </span>
-                    <p className="body-text small">{mass.description || 'No description provided'}</p>
+        <div className="panel priest-assignments-card">
+          <div className="assignment-calendar">
+          {viewMode === 'monthly' ? (
+            <div className="calendar-grid">
+              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
+                <div key={day} className="calendar-cell header-cell">{day}</div>
+              ))}
+              {getCalendarDays(currentMonth).map((date, index) => {
+                if (!date) {
+                  return <div key={`empty-${index}`} className="calendar-cell empty-cell" />;
+                }
+                const daySchedule = getScheduleForDay(date);
+                return (
+                  <div
+                    key={date.toISOString()}
+                    className={`calendar-cell ${isToday(date) ? 'today-cell' : ''} ${daySchedule.length > 0 ? 'has-events' : ''}`}
+                  >
+                    <div className="calendar-date">
+                      <strong>{date.getDate()}</strong>
+                    </div>
+                    {daySchedule.length > 0 && (
+                      <div className="calendar-events">
+                        {daySchedule.map((slot, idx) => (
+                          <div key={idx} className="calendar-event-item">
+                            <span className="event-time">{slot.time}</span>
+                            <span className="event-title">{slot.title}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                  <span className="badge success">{mass.stipend}</span>
+                );
+              })}
+            </div>
+          ) : viewMode === 'weekly' ? (
+            <div className="calendar-row body-row">
+              {getWeekSchedule().map(({ day, schedules }) => (
+                <div key={day} className={`calendar-cell ${day === new Date().toLocaleDateString('en-US', { weekday: 'short' }) ? 'today-cell' : ''}`}>
+                  <strong>{day}</strong>
+                  {schedules.map((slot, idx) => (
+                    <span key={idx} className="calendar-event">{slot.time} - {slot.title}</span>
+                  ))}
                 </div>
               ))}
             </div>
-          </section>
-        )}
+          ) : (
+            <div className="calendar-grid">
+              <div className="section-heading">Today's Schedule</div>
+              {getTodaySchedule().length > 0 ? (
+                getTodaySchedule().map((slot, index) => (
+                  <div key={index} className="calendar-cell">
+                    <span className="event-time">{slot.time}</span>
+                    <span className="event-title">{slot.title}</span>
+                  </div>
+                ))
+              ) : (
+                <p className="body-text">No masses scheduled for today.</p>
+              )}
+            </div>
+          )}
+        </div>
+        </div>
       </section>
+
+      {showSuccessModal && (
+        <div className="modal-overlay" onClick={() => setShowSuccessModal(false)}>
+          <div className="modal-card panel" onClick={(event) => event.stopPropagation()}>
+            <div className="modal-header">
+              <div>
+                <div className="section-heading">Notification</div>
+              </div>
+              <button type="button" className="modal-close-button" onClick={() => setShowSuccessModal(false)}>
+                ×
+              </button>
+            </div>
+            <div className="modal-body">
+              <p className="body-text">{successMessage}</p>
+            </div>
+            <div className="modal-footer">
+              <button type="button" className="button button-primary" onClick={() => setShowSuccessModal(false)}>
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div style={{ marginTop: 24, textAlign: 'center' }}>
         <Link to="/admin-dashboard" className="button button-secondary">
-          Back to Admin Dashboard
+          Back
         </Link>
       </div>
     </MainLayout>

@@ -1,19 +1,30 @@
 export type BookingDraft = {
   eventType: string;
+  eventVariant: string;
   eventDate: string;
   eventTime: string;
   location: string;
   notes: string;
+  paymentMethod: string;
+  requirementsSubmissionMethod: string;
+  isFeastDate?: boolean;
+  feastName?: string | null;
 };
+
+export type DocumentUploadMap = Record<string, { uploadedAt: string }>;
+
 
 const STORAGE_KEY = 'massbookBookingDraft';
 
 export const defaultBookingDraft: BookingDraft = {
   eventType: 'Wedding',
-  eventDate: '2024-10-15',
+  eventVariant: 'normal',
+  eventDate: new Date().toISOString().split('T')[0],
   eventTime: '2:00 PM',
   location: 'St. Jude Thaddeus Cathedral',
   notes: 'Booking request submitted through the MassBook portal.',
+  paymentMethod: '',
+  requirementsSubmissionMethod: '',
 };
 
 export function loadBookingDraft(): BookingDraft {

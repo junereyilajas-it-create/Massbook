@@ -9,6 +9,15 @@ function PendingApprovalsPage() {
   const [loading, setLoading] = useState(true);
   const [metrics, setMetrics] = useState({ total: 0, weddings: 0, baptisms: 0, funerals: 0 });
 
+  const normalizeEventType = (t: any) => {
+    const v = (t ?? '').toString().trim().toLowerCase();
+    if (!v) return '';
+    if (v.includes('matrimony') || v.includes('wedding')) return 'Wedding';
+    if (v.includes('baptism')) return 'Baptism';
+    if (v.includes('funeral')) return 'Funeral';
+    return (t ?? '').toString();
+  };
+
   useEffect(() => {
     apiFetch('/requests')
       .then((data) => {
@@ -17,10 +26,11 @@ function PendingApprovalsPage() {
         
         // Calculate metrics from pending requests
         const pendingOnly = allRequests.filter((r: any) => r.status === 'Pending' || r.status === 'pending');
-        const weddings = pendingOnly.filter((r: any) => r.type?.toLowerCase().includes('wedding') || r.type?.toLowerCase().includes('matrimony')).length;
-        const baptisms = pendingOnly.filter((r: any) => r.type?.toLowerCase().includes('baptism')).length;
-        const funerals = pendingOnly.filter((r: any) => r.type?.toLowerCase().includes('funeral')).length;
-        
+
+        const weddings = pendingOnly.filter((r: any) => normalizeEventType(r.type) === 'Wedding').length;
+        const baptisms = pendingOnly.filter((r: any) => normalizeEventType(r.type) === 'Baptism').length;
+        const funerals = pendingOnly.filter((r: any) => normalizeEventType(r.type) === 'Funeral').length;
+
         setMetrics({
           total: pendingOnly.length,
           weddings,
@@ -31,6 +41,7 @@ function PendingApprovalsPage() {
       .catch(() => setRequests([]))
       .finally(() => setLoading(false));
   }, []);
+
 
   return (
     <MainLayout>
@@ -73,9 +84,13 @@ function PendingApprovalsPage() {
         ) : requests.length ? (
           requests.map((request) => (
             <div key={request.id} className="table-row">
-              <span>{request.type}</span>
+              <span>{normalizeEventType(request.type)}</span>
+
+
+
               <span>{request.name}</span>
               <span>{request.requested}</span>
+
               <span>{request.submitted}</span>
               <span className={`status-pill ${request.status === 'Pending' ? 'pending' : 'success'}`}>{request.status}</span>
               <Link to={`/pending-approvals/${request.id}`} className="ghost-link">
@@ -89,7 +104,7 @@ function PendingApprovalsPage() {
       </div>
 
       <div style={{ marginTop: 24, textAlign: 'center' }}>
-        <Link to="/admin-dashboard" className="button button-secondary">Back to Admin Dashboard</Link>
+        <Link to="/admin-dashboard" className="button button-secondary">Back</Link>
       </div>
     </MainLayout>
   );

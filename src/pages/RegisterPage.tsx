@@ -12,7 +12,7 @@ function RegisterPage() {
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
 
-  const isValid = name.trim() && email.trim().includes('@') && password.length >= 8 && agreed;
+  const isValid = name.trim() && email.trim().includes('@') && password.length > 0 && agreed;
 
   const handleCreateAccount = async () => {
     if (!isValid) {

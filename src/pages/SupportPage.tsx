@@ -1,18 +1,11 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import MainLayout from '../components/MainLayout';
-import { apiFetch } from '../utils/api';
 
 function SupportPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
-  const [ticketData, setTicketData] = useState({
-    name: 'Father Thomas',
-    parishId: 'MB-8921',
-    subject: 'Technical Issue',
-    message: 'How can we assist you with MassBook today?',
-  });
 
   const handleSearch = () => {
     setError('');
@@ -22,24 +15,6 @@ function SupportPage() {
   const handleGuideClick = (title: string) => {
     setError('');
     setMessage(`Opening guide: ${title}`);
-  };
-
-  const handleTicketChange = (field: string, value: string) => {
-    setTicketData((prev) => ({ ...prev, [field]: value }));
-  };
-
-  const handleSendTicket = async () => {
-    setError('');
-    setMessage('');
-    try {
-      const response = await apiFetch('/support/ticket', {
-        method: 'POST',
-        body: JSON.stringify(ticketData),
-      });
-      setMessage(response.message || 'Support ticket sent successfully.');
-    } catch (sendError) {
-      setError((sendError as Error).message);
-    }
   };
 
   return (
@@ -83,6 +58,33 @@ function SupportPage() {
             <p className="body-text">A comprehensive PDF covering all basic and advanced MassBook features.</p>
             <button className="ghost-link" type="button" onClick={() => setMessage('Downloading User Handbook PDF...')}>Download PDF</button>
           </div>
+          <div className="resource-card">
+            <strong>Keyboard Shortcuts</strong>
+            <p className="body-text">Speed up your workflow with these time-saving keyboard shortcuts.</p>
+            <button className="ghost-link" type="button" onClick={() => setMessage('Opening keyboard shortcuts guide...')}>View Shortcuts</button>
+          </div>
+        </div>
+
+        <div className="panel" style={{ marginTop: '24px' }}>
+          <div className="section-heading">Frequently Asked Questions</div>
+          <div style={{ display: 'grid', gap: '16px', marginTop: '16px' }}>
+            <div className="field-card">
+              <strong>How do I book a sacrament?</strong>
+              <p className="body-text">Navigate to Event Booking from the dashboard and follow the step-by-step wizard to select your event type, date, and upload required documents.</p>
+            </div>
+            <div className="field-card">
+              <strong>What documents are required for weddings?</strong>
+              <p className="body-text">Weddings require: Baptismal Certificate, Confirmation Certificate, PSA Birth Certificate, Marriage License, CENOMAR, Pre-Cana Seminar Certificate, Wedding Banns, and valid IDs.</p>
+            </div>
+            <div className="field-card">
+              <strong>How do I cancel a booking?</strong>
+              <p className="body-text">Click the "Cancel Booking" button in any step of the booking process. A confirmation dialog will appear to prevent accidental cancellations.</p>
+            </div>
+            <div className="field-card">
+              <strong>What keyboard shortcuts are available?</strong>
+              <p className="body-text">Press Enter to submit forms or continue to the next step. Press Escape to cancel operations or close dialogs.</p>
+            </div>
+          </div>
         </div>
 
         <div className="support-bottom-grid">
@@ -95,32 +97,11 @@ function SupportPage() {
               <p className="body-text">All MassBook cloud services are currently operational and performing within normal parameters.</p>
             </div>
           </div>
-
-          <div className="panel contact-panel">
-            <div className="section-heading">Submit a Ticket</div>
-            <div className="field-card">
-              <label className="small-label">Name</label>
-              <input className="input-field" value={ticketData.name} onChange={(e) => handleTicketChange('name', e.target.value)} />
-            </div>
-            <div className="field-card">
-              <label className="small-label">Parish ID</label>
-              <input className="input-field" value={ticketData.parishId} onChange={(e) => handleTicketChange('parishId', e.target.value)} />
-            </div>
-            <div className="field-card">
-              <label className="small-label">Subject</label>
-              <input className="input-field" value={ticketData.subject} onChange={(e) => handleTicketChange('subject', e.target.value)} />
-            </div>
-            <div className="field-card">
-              <label className="small-label">Message</label>
-              <textarea className="input-field" rows={4} value={ticketData.message} onChange={(e) => handleTicketChange('message', e.target.value)} />
-            </div>
-            <button className="button button-primary" type="button" onClick={handleSendTicket}>Send Support Ticket</button>
-          </div>
         </div>
       </div>
 
       <div style={{ marginTop: 24, textAlign: 'center' }}>
-        <Link to="/dashboard" className="button button-secondary">Back to Dashboard</Link>
+        <Link to="/dashboard" className="button button-secondary">Back</Link>
       </div>
     </MainLayout>
   );

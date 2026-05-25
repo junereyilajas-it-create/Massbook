@@ -116,12 +116,17 @@ app.post('/api/schedules', async (req, res) => {
 app.get('/api/requests', async (req, res) => {
   try {
     const [rows] = await pool.query(`
-      SELECT event_id AS id, 'Event' AS type, requester_name AS name,
-             DATE_FORMAT(event_date, '%b %d, %Y') AS requested,
-             DATE_FORMAT(created_at, '%b %d, %Y') AS submitted, status
-      FROM events
-      WHERE status IN ('pending', 'approved')
-      ORDER BY created_at ASC
+      SELECT 
+        e.event_id AS id,
+        et.name AS type,
+        e.requester_name AS name,
+        DATE_FORMAT(e.event_date, '%b %d, %Y') AS requested,
+        DATE_FORMAT(e.created_at, '%b %d, %Y') AS submitted,
+        e.status
+      FROM events e
+      LEFT JOIN event_types et ON et.event_type_id = e.event_type_id
+      WHERE e.status = 'pending'
+      ORDER BY e.created_at ASC
     `);
     res.json(rows);
   } catch (error) {
@@ -207,7 +212,8 @@ app.post('/api/requests/:id/approve', async (req, res) => {
         scheduleDate,
         dayOfWeek,
         event.start_time || '10:00:00',
-        event.title || event.type || 'Event',
+        // Use the event requested for this specific request id (fallback to event type)
+        event.title || event.type || event.event_type_id || 'Event' ,
         event.description || '',
         event.celebrant || 'To be assigned',
         event.requester_name || '',
@@ -245,15 +251,85 @@ app.post('/api/requests/:id/decline', async (req, res) => {
 
 app.post('/api/bookings', async (req, res) => {
   try {
-    const { event_type_id, requester_name, email, contact_number, event_date, start_time, end_time, notes } = req.body;
+    console.log('booking payload', req.body);
+    const {
+      event_type_id,
+      requester_name,
+      email,
+      contact_number,
+      event_date,
+      start_time,
+      end_time,
+      notes,
+      location,
+      type,
+      title,
+      description,
+      submitted_date,
+    } = req.body;
+
     if (!event_type_id || !requester_name || !event_date || !start_time) {
       return res.status(400).json({ message: 'Missing required booking values' });
     }
 
+    const eventDate = new Date(`${event_date}T00:00:00`);
+    if (Number.isNaN(eventDate.getTime())) {
+      return res.status(400).json({ message: 'Invalid event date.' });
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    eventDate.setHours(0, 0, 0, 0);
+
+    if (eventDate <= today) {
+      return res.status(400).json({ message: 'Invalid date. You can only book events for future dates (tomorrow or later).' });
+    }
+
+    const currentDate = typeof submitted_date === 'string' && submitted_date.trim()
+      ? submitted_date.trim()
+      : new Date().toISOString().split('T')[0];
+
+    const normalizedType = typeof type === 'string' ? type.trim() : '';
+    const normalizedTitle = typeof title === 'string' && title.trim() ? title.trim() : (normalizedType || 'Event');
+    const normalizedDescription = typeof description === 'string' ? description.trim() : '';
+    const normalizedLocation = typeof location === 'string' ? location.trim() : '';
+    const normalizedNotes = typeof notes === 'string' ? notes.trim() : '';
+
     const [result] = await pool.query(
-      `INSERT INTO events (event_type_id, requester_name, email, contact_number, event_date, start_time, end_time, status, notes) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [event_type_id, requester_name, email ?? '', contact_number ?? '', event_date, start_time, end_time ?? start_time, 'pending', notes ?? '']
+      `INSERT INTO events (
+        event_type_id,
+        type,
+        title,
+        description,
+        status,
+        requested_date,
+        submitted_date,
+        requester_name,
+        email,
+        contact_number,
+        event_date,
+        start_time,
+        end_time,
+        location,
+        notes
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)` ,
+      [
+        event_type_id,
+        normalizedType,
+        normalizedTitle,
+        normalizedDescription || null,
+        'pending',
+        currentDate,
+        currentDate,
+        requester_name,
+        email ?? '',
+        contact_number ?? '',
+        event_date,
+        start_time,
+        end_time ?? start_time,
+        normalizedLocation,
+        normalizedNotes,
+      ]
     );
 
     const [rows] = await pool.query('SELECT event_id, requester_name, status FROM events WHERE event_id = ?', [result.insertId]);
@@ -287,6 +363,100 @@ app.get('/api/health', async (req, res) => {
     res.json({ status: 'ok', message: 'Database connected' });
   } catch (error) {
     res.status(500).json({ status: 'error', message: 'Database connection failed', error: error.message });
+  }
+});
+
+app.get('/api/reports/summary', async (req, res) => {
+  try {
+    const [userRows] = await pool.query('SELECT COUNT(*) as total FROM users');
+    const totalUsers = userRows[0].total;
+
+    const [eventStatusRows] = await pool.query('SELECT status, COUNT(*) as count FROM events GROUP BY status');
+
+    const [eventTypeRows] = await pool.query(`
+      SELECT et.name, COUNT(e.event_id) as count
+      FROM event_types et
+      LEFT JOIN events e ON et.event_type_id = e.event_type_id
+      GROUP BY et.name
+    `);
+
+    const [scheduleRows] = await pool.query('SELECT COUNT(*) as total FROM schedules');
+    const totalSchedules = scheduleRows[0].total;
+
+    res.json({
+      totalUsers,
+      eventStatus: eventStatusRows,
+      eventType: eventTypeRows,
+      totalSchedules
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching report summary', error: error.message });
+  }
+});
+
+// Announcements API endpoints
+app.get('/api/announcements', async (req, res) => {
+  try {
+    const [rows] = await pool.query(
+      'SELECT * FROM announcements WHERE is_active = true ORDER BY created_at DESC'
+    );
+    res.json(rows);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching announcements', error: error.message });
+  }
+});
+
+app.post('/api/announcements', async (req, res) => {
+  try {
+    const { title, message, type } = req.body;
+    if (!title || !message) {
+      return res.status(400).json({ message: 'Title and message are required.' });
+    }
+
+    const [result] = await pool.query(
+      'INSERT INTO announcements (title, message, type) VALUES (?, ?, ?)',
+      [title, message, type || 'general']
+    );
+
+    res.status(201).json({ id: result.insertId, title, message, type: type || 'general' });
+  } catch (error) {
+    res.status(500).json({ message: 'Error creating announcement', error: error.message });
+  }
+});
+
+app.put('/api/announcements/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { title, message, type, is_active } = req.body;
+
+    const [result] = await pool.query(
+      'UPDATE announcements SET title = ?, message = ?, type = ?, is_active = ? WHERE id = ?',
+      [title, message, type, is_active, id]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: 'Announcement not found.' });
+    }
+
+    res.json({ id, title, message, type, is_active });
+  } catch (error) {
+    res.status(500).json({ message: 'Error updating announcement', error: error.message });
+  }
+});
+
+app.delete('/api/announcements/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const [result] = await pool.query('DELETE FROM announcements WHERE id = ?', [id]);
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: 'Announcement not found.' });
+    }
+
+    res.json({ message: 'Announcement deleted successfully.' });
+  } catch (error) {
+    res.status(500).json({ message: 'Error deleting announcement', error: error.message });
   }
 });
 
