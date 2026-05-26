@@ -1,5 +1,4 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
 
 interface TermsAndPrivacyModalProps {
   isOpen: boolean;
@@ -8,22 +7,13 @@ interface TermsAndPrivacyModalProps {
 }
 
 function TermsAndPrivacyModal({ isOpen, onClose, initialTab = 'terms' }: TermsAndPrivacyModalProps) {
-  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'terms' | 'privacy'>(initialTab);
-  const [agreed, setAgreed] = useState(false);
 
-  // Reset active tab when modal opens with a different initial tab
-  if (isOpen && activeTab !== initialTab) {
+  useEffect(() => {
     setActiveTab(initialTab);
-  }
+  }, [initialTab, isOpen]);
 
   if (!isOpen) return null;
-
-  const handleContinue = () => {
-    if (agreed) {
-      navigate('/login');
-    }
-  };
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -132,24 +122,9 @@ function TermsAndPrivacyModal({ isOpen, onClose, initialTab = 'terms' }: TermsAn
         </div>
 
         <div className="modal-footer">
-          <label className="checkbox-row">
-            <input
-              type="checkbox"
-              checked={agreed}
-              onChange={(e) => setAgreed(e.target.checked)}
-            />
-            <span>I have read and agree to the Terms of Service and Privacy Policy</span>
-          </label>
           <div className="modal-actions">
-            <button className="button button-secondary" onClick={onClose}>
-              Cancel
-            </button>
-            <button
-              className="button button-primary"
-              onClick={handleContinue}
-              disabled={!agreed}
-            >
-              Continue to Login
+            <button className="button button-primary" onClick={onClose}>
+              OK
             </button>
           </div>
         </div>

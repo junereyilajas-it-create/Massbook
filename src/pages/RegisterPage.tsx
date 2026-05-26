@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { apiFetch } from '../utils/api';
+import TermsAndPrivacyModal from '../components/TermsAndPrivacyModal';
 
 function RegisterPage() {
   const navigate = useNavigate();
@@ -11,8 +12,16 @@ function RegisterPage() {
   const [agreed, setAgreed] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
+  const [showTermsModal, setShowTermsModal] = useState(false);
+  const [initialTab, setInitialTab] = useState<'terms' | 'privacy'>('terms');
 
   const isValid = name.trim() && email.trim().includes('@') && password.length > 0 && agreed;
+
+  const handleOpenTerms = (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    setInitialTab('terms');
+    setShowTermsModal(true);
+  };
 
   const handleCreateAccount = async () => {
     if (!isValid) {
@@ -151,10 +160,12 @@ function RegisterPage() {
               />
             </div>
 
-            <label className="checkbox-row checkbox-panel">
+            <div className="checkbox-row checkbox-panel">
               <input type="checkbox" checked={agreed} onChange={(event) => setAgreed(event.target.checked)} />
-              <span>I agree to the Terms of Service and Privacy Policy of MassBook.</span>
-            </label>
+              <button type="button" className="ghost-link" onClick={handleOpenTerms}>
+                I agree to the Terms of Service and Privacy Policy of MassBook.
+              </button>
+            </div>
 
             <button
               className="button button-primary full-width"
@@ -167,10 +178,16 @@ function RegisterPage() {
 
           <p className="login-footer">
             Already have an account?{' '}
-            <button className="ghost-link" onClick={() => navigate('/')}>Login instead</button>
+            <button className="ghost-link" onClick={() => navigate('/login')}>Login instead</button>
           </p>
         </section>
       </div>
+
+      <TermsAndPrivacyModal
+        isOpen={showTermsModal}
+        onClose={() => setShowTermsModal(false)}
+        initialTab={initialTab}
+      />
     </div>
   );
 }

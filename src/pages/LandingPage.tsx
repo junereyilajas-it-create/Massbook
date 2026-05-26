@@ -1,16 +1,15 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
-import sanctuaryImg from '../sanctuary.png';
 import TermsAndPrivacyModal from '../components/TermsAndPrivacyModal';
 
 function LandingPage() {
+  const navigate = useNavigate();
   const [showTermsModal, setShowTermsModal] = useState(false);
   const [initialTab, setInitialTab] = useState<'terms' | 'privacy'>('terms');
 
   const handleLoginClick = (e: React.MouseEvent) => {
     e.preventDefault();
-    setInitialTab('terms');
-    setShowTermsModal(true);
+    navigate('/login');
   };
 
   const handlePrivacyClick = (e: React.MouseEvent) => {
@@ -55,14 +54,14 @@ function LandingPage() {
             Designed for parishes of all sizes.
           </p>
           <div className="landing-cta">
-            <Link to="/register" className="button button-primary hero-button">Start Free Trial</Link>
+            <Link to="/register" className="button button-primary hero-button">Get Started</Link>
             <button onClick={handleLoginClick} className="button button-secondary hero-button">Sign In</button>
           </div>
         </div>
         <div className="landing-hero-visual">
           <img
-            src={sanctuaryImg}
-            alt="Church Sanctuary"
+            src="https://i0.wp.com/christianpublishinghouse.co/wp-content/uploads/2019/11/jesus-baptism_the-baptism-of-jesus-by-john-1.png?fit=650%2C320&ssl=1"
+            alt="Baptism of Jesus"
             style={{ width: '100%', height: '100%', objectFit: 'cover' }}
           />
         </div>
@@ -155,7 +154,7 @@ function LandingPage() {
             <h2>Ready to Transform Your Parish Management?</h2>
             <p className="hero-copy">Join hundreds of parishes already using MassBook to streamline their operations.</p>
             <div className="landing-cta">
-              <Link to="/register" className="button button-primary hero-button">Get Started Free</Link>
+              <Link to="/register" className="button button-primary hero-button">Get Started</Link>
               <button onClick={handleLoginClick} className="button button-secondary hero-button">Learn More</button>
             </div>
           </div>
