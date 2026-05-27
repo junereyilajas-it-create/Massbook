@@ -1,11 +1,13 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import TermsAndPrivacyModal from '../components/TermsAndPrivacyModal';
+import AboutModal from '../components/AboutModal';
 
 function LandingPage() {
   const navigate = useNavigate();
   const [showTermsModal, setShowTermsModal] = useState(false);
   const [initialTab, setInitialTab] = useState<'terms' | 'privacy'>('terms');
+  const [showAboutModal, setShowAboutModal] = useState(false);
 
   const handleLoginClick = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -22,6 +24,11 @@ function LandingPage() {
     e.preventDefault();
     setInitialTab('terms');
     setShowTermsModal(true);
+  };
+
+  const handleLearnMoreClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setShowAboutModal(true);
   };
   return (
     <div className="landing-shell">
@@ -155,7 +162,7 @@ function LandingPage() {
             <p className="hero-copy">Join hundreds of parishes already using MassBook to streamline their operations.</p>
             <div className="landing-cta">
               <Link to="/register" className="button button-primary hero-button">Get Started</Link>
-              <button onClick={handleLoginClick} className="button button-secondary hero-button">Learn More</button>
+              <button onClick={handleLearnMoreClick} className="button button-secondary hero-button">Learn More</button>
             </div>
           </div>
         </div>
@@ -206,6 +213,10 @@ function LandingPage() {
         isOpen={showTermsModal}
         onClose={() => setShowTermsModal(false)}
         initialTab={initialTab}
+      />
+      <AboutModal
+        isOpen={showAboutModal}
+        onClose={() => setShowAboutModal(false)}
       />
     </div>
   );

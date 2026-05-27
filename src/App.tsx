@@ -14,6 +14,7 @@ import SettingsPage from './pages/SettingsPage';
 import SupportPage from './pages/SupportPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
+import ProfilePage from './pages/ProfilePage';
 
 function App() {
   return (
@@ -33,6 +34,8 @@ function App() {
         <Route path="/event-booking/step4" element={<Navigate to="/event-booking/review" replace />} />
         <Route path="/mass-schedule" element={<MassSchedulePage />} />
         <Route path="/admin/mass-schedule" element={<AdminMassSchedulePage />} />
+        <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/admin/profile" element={<ProfilePage />} />
         <Route path="/admin/reports" element={<ReportsPage />} />
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="/support" element={<SupportPage />} />

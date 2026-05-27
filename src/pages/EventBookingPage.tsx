@@ -200,9 +200,18 @@ function EventBookingPage() {
   };
 
   const handleUpload = (documentName: string) => {
-    setMessage(`${documentName} uploaded successfully (demo).`);
     const uploads = getUploads();
-    setUploads({ ...uploads, [documentName]: { uploadedAt: new Date().toISOString() } });
+    const nextUploads = { ...uploads };
+
+    if (nextUploads[documentName]) {
+      delete nextUploads[documentName];
+      setMessage(`${documentName} upload removed.`);
+    } else {
+      nextUploads[documentName] = { uploadedAt: new Date().toISOString() };
+      setMessage(`${documentName} uploaded successfully (demo).`);
+    }
+
+    setUploads(nextUploads);
   };
 
   const handleContinue = () => {
@@ -352,15 +361,13 @@ function EventBookingPage() {
                       <span className="body-text">{doc.description}</span>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      {isUploaded ? (
-                        <button type="button" className="button button-primary" disabled>
-                          Uploaded
-                        </button>
-                      ) : (
-                        <button type="button" className="button button-secondary" onClick={() => handleUpload(doc.name)}>
-                          Upload
-                        </button>
-                      )}
+                      <button
+                        type="button"
+                        className={isUploaded ? 'button button-primary' : 'button button-secondary'}
+                        onClick={() => handleUpload(doc.name)}
+                      >
+                        {isUploaded ? 'Uploaded (click to undo)' : 'Upload'}
+                      </button>
                     </div>
                   </div>
                 );

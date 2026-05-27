@@ -84,6 +84,12 @@ function EventBookingReviewPage() {
 
   const [showWhatHappensNextModal, setShowWhatHappensNextModal] = useState(false);
 
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+
+  const [showGcashQrModal, setShowGcashQrModal] = useState(false);
+
+  const [paymentMethod, setPaymentMethod] = useState<'gcash' | 'physical' | ''>('');
+
   const navigate = useNavigate();
 
 
@@ -220,7 +226,24 @@ function EventBookingReviewPage() {
       return;
     }
 
-    setShowWhatHappensNextModal(true);
+    if (!paymentMethod) {
+      setShowPaymentModal(true);
+    } else {
+      setShowWhatHappensNextModal(true);
+    }
+  };
+
+  const handlePaymentMethodSelect = (method: 'gcash' | 'physical') => {
+    setPaymentMethod(method);
+    setShowPaymentModal(false);
+
+    if (method === 'gcash') {
+      setShowGcashQrModal(true);
+    }
+  };
+
+  const handleGcashConfirm = () => {
+    setShowGcashQrModal(false);
   };
 
   const handleConfirmSubmitBooking = async () => {
@@ -294,10 +317,10 @@ function EventBookingReviewPage() {
               className="button button-primary small"
               type="button"
               onClick={handleSubmitBooking}
-              disabled={isProcessing}
+              disabled={isProcessing || !paymentMethod}
               style={{ background: 'linear-gradient(135deg, #0f2147 0%, #162c5c 100%)', boxShadow: '0 8px 20px rgba(15, 33, 71, 0.15)' }}
             >
-              {isProcessing ? 'Processing...' : 'Submit Booking'}
+              {isProcessing ? 'Processing...' : paymentMethod ? 'Submit Booking' : 'Select Payment Method'}
             </button>
             <Link to="/event-booking" className="button button-secondary small" style={{ textAlign: 'center' }}>Back</Link>
           </div>
@@ -405,6 +428,39 @@ function EventBookingReviewPage() {
 
             </div>
 
+            {!paymentMethod && (
+              <button
+                className="button button-primary"
+                type="button"
+                onClick={() => setShowPaymentModal(true)}
+                style={{ width: '100%', marginTop: '16px', padding: '12px 20px', fontSize: '1rem' }}
+              >
+                Select Payment Method
+              </button>
+            )}
+
+            {paymentMethod && (
+              <div style={{ marginTop: '16px', padding: '12px', background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)', borderRadius: '8px', border: '1px solid #0ea5e9' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '1.2rem' }}>{paymentMethod === 'gcash' ? '💳' : '🏛️'}</span>
+                  <strong style={{ color: '#0f2147' }}>
+                    {paymentMethod === 'gcash' ? 'GCash Payment' : 'Physical Payment at Church'}
+                  </strong>
+                </div>
+                <button
+                  className="button button-secondary small"
+                  type="button"
+                  onClick={() => {
+                    setPaymentMethod('');
+                    setShowPaymentModal(true);
+                  }}
+                  style={{ marginTop: '8px', width: '100%', padding: '8px 16px', fontSize: '0.9rem' }}
+                >
+                  Change Payment Method
+                </button>
+              </div>
+            )}
+
           </div>
 
 
@@ -412,6 +468,190 @@ function EventBookingReviewPage() {
         </aside>
 
       </section>
+
+      {showPaymentModal && (
+        <div className="modal-overlay" onClick={() => setShowPaymentModal(false)}>
+          <div
+            className="modal-content"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.99) 0%, rgba(248, 251, 255, 0.99) 100%)',
+              boxShadow: '0 32px 80px rgba(15, 33, 71, 0.28)',
+              padding: '44px 40px',
+              borderRadius: '28px',
+              maxWidth: '560px',
+              textAlign: 'center',
+              border: '1px solid rgba(15, 33, 71, 0.08)',
+            }}
+          >
+            <div style={{ fontSize: '2.8rem', marginBottom: '16px' }}>💳</div>
+            <h2
+              style={{
+                fontSize: '1.8rem',
+                color: '#0f2147',
+                margin: '0 0 16px',
+                fontWeight: 700,
+              }}
+            >
+              Select Payment Method
+            </h2>
+            <p
+              className="body-text"
+              style={{
+                marginBottom: '32px',
+                color: '#5f7096',
+                lineHeight: '1.7',
+                fontSize: '1.05rem',
+              }}
+            >
+              How would you like to pay for your booking?
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', maxWidth: '400px', margin: '0 auto' }}>
+              <button
+                type="button"
+                className="button button-primary"
+                onClick={() => handlePaymentMethodSelect('gcash')}
+                style={{
+                  background: 'linear-gradient(135deg, #007bff 0%, #0056b3 100%)',
+                  boxShadow: '0 8px 20px rgba(0, 123, 255, 0.15)',
+                  padding: '16px 24px',
+                  fontSize: '1.1rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '12px',
+                }}
+              >
+                <span style={{ fontSize: '1.5rem' }}>💳</span>
+                Pay via GCash
+              </button>
+              <button
+                type="button"
+                className="button button-secondary"
+                onClick={() => handlePaymentMethodSelect('physical')}
+                style={{
+                  padding: '16px 24px',
+                  fontSize: '1.1rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '12px',
+                }}
+              >
+                <span style={{ fontSize: '1.5rem' }}>🏛️</span>
+                Pay Physically at Church
+              </button>
+            </div>
+            <button
+              type="button"
+              className="button button-secondary small"
+              onClick={() => setShowPaymentModal(false)}
+              style={{ marginTop: '24px', padding: '10px 20px', fontSize: '0.95rem' }}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {showGcashQrModal && (
+        <div className="modal-overlay" onClick={() => setShowGcashQrModal(false)}>
+          <div
+            className="modal-content"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.99) 0%, rgba(248, 251, 255, 0.99) 100%)',
+              boxShadow: '0 32px 80px rgba(15, 33, 71, 0.28)',
+              padding: '44px 40px',
+              borderRadius: '28px',
+              maxWidth: '500px',
+              textAlign: 'center',
+              border: '1px solid rgba(15, 33, 71, 0.08)',
+            }}
+          >
+            <div style={{ fontSize: '2.8rem', marginBottom: '16px' }}>💳</div>
+            <h2
+              style={{
+                fontSize: '1.8rem',
+                color: '#0f2147',
+                margin: '0 0 16px',
+                fontWeight: 700,
+              }}
+            >
+              Scan to Pay via GCash
+            </h2>
+            <p
+              className="body-text"
+              style={{
+                marginBottom: '24px',
+                color: '#5f7096',
+                lineHeight: '1.7',
+                fontSize: '1.05rem',
+              }}
+            >
+              Scan the QR code below with your GCash app to complete your payment of {price === 0 ? 'Free' : `₱${price.toLocaleString()}`}
+            </p>
+            <div
+              style={{
+                background: '#ffffff',
+                padding: '24px',
+                borderRadius: '16px',
+                marginBottom: '24px',
+                border: '2px dashed #0ea5e9',
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+              }}
+            >
+              <div
+                style={{
+                  width: '200px',
+                  height: '200px',
+                  background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)',
+                  borderRadius: '12px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  gap: '12px',
+                  border: '1px solid #0ea5e9',
+                }}
+              >
+                <div style={{ fontSize: '4rem' }}>📱</div>
+                <div style={{ fontSize: '0.9rem', color: '#5f7096', textAlign: 'center' }}>
+                  GCash QR Code
+                </div>
+                <div style={{ fontSize: '0.8rem', color: '#94a3b8', textAlign: 'center' }}>
+                  (Demo QR Code)
+                </div>
+              </div>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <button
+                type="button"
+                className="button button-primary"
+                onClick={handleGcashConfirm}
+                style={{
+                  background: 'linear-gradient(135deg, #007bff 0%, #0056b3 100%)',
+                  boxShadow: '0 8px 20px rgba(0, 123, 255, 0.15)',
+                  padding: '14px 24px',
+                  fontSize: '1rem',
+                }}
+              >
+                Confirm Payment & Return to Booking
+              </button>
+              <button
+                type="button"
+                className="button button-secondary small"
+                onClick={() => setShowGcashQrModal(false)}
+                style={{ padding: '10px 20px', fontSize: '0.95rem' }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showWhatHappensNextModal && (
         <div className="modal-overlay" onClick={() => setShowWhatHappensNextModal(false)}>

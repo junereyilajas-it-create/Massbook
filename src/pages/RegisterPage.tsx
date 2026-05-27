@@ -53,7 +53,6 @@ function RegisterPage() {
             <p className="small-label">MassBook</p>
             <strong className="hero-heading">Join our parish digital community.</strong>
             <p className="body-text hero-copy">
-              Streamline your spiritual journey. Manage mass bookings, track sacramental records,
               and stay connected with your parish administration in one serene space.
             </p>
           </div>
@@ -64,8 +63,6 @@ function RegisterPage() {
               <span>Real-time booking and liturgical updates.</span>
             </div>
             <div className="feature-item">
-              <strong>Sacramental Records</strong>
-              <span>Secure access to your family’s records.</span>
             </div>
           </div>
 

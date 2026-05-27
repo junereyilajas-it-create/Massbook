@@ -33,6 +33,7 @@ function Sidebar() {
           <strong>Parish Administration</strong>
         </div>
       </div>
+      
       <nav className="nav-group" aria-label="Primary navigation">
         {links.map((link) => (
           <NavLink

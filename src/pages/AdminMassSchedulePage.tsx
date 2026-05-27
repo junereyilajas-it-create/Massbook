@@ -6,11 +6,11 @@ import { apiFetch } from '../utils/api';
 
 type MassEntry = {
   id?: number;
+  event_date: string;
   day?: string;
   title?: string;
   massType: string;
   celebrant: string;
-  date: string;
   time: string;
   description: string;
   requester: string;
@@ -21,8 +21,8 @@ type MassEntry = {
 const initialFormState: MassEntry = {
   massType: 'Daily Mass',
   celebrant: 'Fr. Niel Limbaco',
-  date: '',
-  time: '08:00 AM',
+  event_date: '',
+  time: '08:00',
   description: '',
   requester: '',
   stipend: 'Standard',
@@ -45,6 +45,58 @@ function AdminMassSchedulePage() {
     if (filterMode === 'ordinary') return !slot.title?.toLowerCase().includes('feast');
     return true;
   });
+
+  const formatTime12Hour = (time24: string) => {
+    const [hours, minutes] = time24.split(':');
+    const hour = parseInt(hours, 10);
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    const hour12 = hour % 12 || 12;
+    return `${hour12}:${minutes} ${ampm}`;
+  };
+
+  const getFilteredSlots = () => {
+    let filtered = filteredSchedule;
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    if (viewMode === 'today') {
+      filtered = filteredSchedule.filter(slot => {
+        const [year, month, day] = slot.event_date.split('-').map(Number);
+        const slotDate = new Date(year, month - 1, day);
+        slotDate.setHours(0, 0, 0, 0);
+        return slotDate.getTime() === today.getTime();
+      });
+    } else if (viewMode === 'weekly') {
+      const startOfWeek = new Date(today);
+      startOfWeek.setDate(today.getDate() - today.getDay());
+      startOfWeek.setHours(0, 0, 0, 0);
+      
+      const endOfWeek = new Date(startOfWeek);
+      endOfWeek.setDate(startOfWeek.getDate() + 6);
+      endOfWeek.setHours(23, 59, 59, 999);
+      
+      filtered = filteredSchedule.filter(slot => {
+        const [year, month, day] = slot.event_date.split('-').map(Number);
+        const slotDate = new Date(year, month - 1, day);
+        return slotDate >= startOfWeek && slotDate <= endOfWeek;
+      });
+    } else if (viewMode === 'monthly') {
+      const startOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
+      startOfMonth.setHours(0, 0, 0, 0);
+      
+      const endOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
+      endOfMonth.setHours(23, 59, 59, 999);
+      
+      filtered = filteredSchedule.filter(slot => {
+        const [year, month, day] = slot.event_date.split('-').map(Number);
+        const slotDate = new Date(year, month - 1, day);
+        return slotDate >= startOfMonth && slotDate <= endOfMonth;
+      });
+    }
+    
+    return filtered;
+  };
 
   useEffect(() => {
     apiFetch('/schedules')
@@ -80,18 +132,39 @@ function AdminMassSchedulePage() {
   };
 
   const getTodaySchedule = () => {
-    const today = new Date();
-    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    const dayName = dayNames[today.getDay()];
-    return filteredSchedule.filter(slot => slot.day === dayName);
+    return getFilteredSlots().sort((a, b) => a.time.localeCompare(b.time));
   };
 
   const getWeekSchedule = () => {
+    const today = new Date();
+    const startOfWeek = new Date(today);
+    startOfWeek.setDate(today.getDate() - today.getDay());
+    startOfWeek.setHours(0, 0, 0, 0);
+    
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 6);
+    endOfWeek.setHours(23, 59, 59, 999);
+    
     const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    return dayNames.map(dayName => ({
-      day: dayName,
-      schedules: filteredSchedule.filter(slot => slot.day === dayName)
-    }));
+    const filtered = getFilteredSlots();
+    
+    return dayNames.map(dayName => {
+      const dayIndex = dayNames.indexOf(dayName);
+      const targetDate = new Date(startOfWeek);
+      targetDate.setDate(startOfWeek.getDate() + dayIndex);
+      
+      // Format date in local timezone
+      const year = targetDate.getFullYear();
+      const month = String(targetDate.getMonth() + 1).padStart(2, '0');
+      const day = String(targetDate.getDate()).padStart(2, '0');
+      const dateStr = `${year}-${month}-${day}`;
+      
+      return {
+        day: dayName,
+        date: dateStr,
+        schedules: filtered.filter(slot => slot.event_date === dateStr).sort((a, b) => a.time.localeCompare(b.time))
+      };
+    });
   };
 
   const getMonthName = (date: Date) => {
@@ -123,9 +196,16 @@ function AdminMassSchedulePage() {
            date.getFullYear() === today.getFullYear();
   };
 
+  const formatDateStr = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   const getScheduleForDay = (date: Date) => {
-    const dateString = date.toISOString().split('T')[0];
-    return filteredSchedule.filter(slot => slot.date === dateString);
+    const dateStr = formatDateStr(date);
+    return getFilteredSlots().filter(slot => slot.event_date === dateStr);
   };
 
   const updateForm = (field: keyof MassEntry, value: string) => {
@@ -137,14 +217,14 @@ function AdminMassSchedulePage() {
     event.preventDefault();
 
     try {
-      const dayName = massForm.date
-        ? new Date(massForm.date).toLocaleDateString('en-US', { weekday: 'short' })
+      const dayName = massForm.event_date
+        ? new Date(massForm.event_date).toLocaleDateString('en-US', { weekday: 'short' })
         : 'New';
 
       const newSchedule = await apiFetch('/schedules', {
         method: 'POST',
         body: JSON.stringify({
-          event_date: massForm.date,
+          event_date: massForm.event_date,
           day: dayName,
           time: massForm.time,
           title: massForm.massType,
@@ -258,8 +338,8 @@ function AdminMassSchedulePage() {
                   <span className="small-label">Date</span>
                   <input
                     type="date"
-                    value={massForm.date}
-                    onChange={(event) => updateForm('date', event.target.value)}
+                    value={massForm.event_date}
+                    onChange={(event) => updateForm('event_date', event.target.value)}
                   />
                 </div>
 
@@ -320,7 +400,7 @@ function AdminMassSchedulePage() {
           {viewMode === 'monthly' ? (
             <div className="calendar-grid">
               {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
-                <div key={day} className="calendar-cell header-cell">{day}</div>
+                <div key={day} className="calendar-cell header-cell" style={{ fontSize: '1.4rem', fontWeight: '800', color: '#0f2147', backgroundColor: '#e2e8f0', padding: '14px' }}>{day}</div>
               ))}
               {getCalendarDays(currentMonth).map((date, index) => {
                 if (!date) {
@@ -339,8 +419,8 @@ function AdminMassSchedulePage() {
                       <div className="calendar-events">
                         {daySchedule.map((slot, idx) => (
                           <div key={idx} className="calendar-event-item">
-                            <span className="event-time">{slot.time}</span>
-                            <span className="event-title">{slot.title}</span>
+                            <span className="event-time" style={{ fontWeight: '600' }}>{formatTime12Hour(slot.time)}</span>
+                            <span className="event-title" style={{ fontWeight: '600' }}>{slot.title}</span>
                           </div>
                         ))}
                       </div>
@@ -351,27 +431,45 @@ function AdminMassSchedulePage() {
             </div>
           ) : viewMode === 'weekly' ? (
             <div className="calendar-row body-row">
-              {getWeekSchedule().map(({ day, schedules }) => (
-                <div key={day} className={`calendar-cell ${day === new Date().toLocaleDateString('en-US', { weekday: 'short' }) ? 'today-cell' : ''}`}>
-                  <strong>{day}</strong>
-                  {schedules.map((slot, idx) => (
-                    <span key={idx} className="calendar-event">{slot.time} - {slot.title}</span>
-                  ))}
-                </div>
-              ))}
+              {getWeekSchedule().map(({ day, date, schedules }) => {
+                const today = new Date();
+                const todayStr = formatDateStr(today);
+                const isDayToday = todayStr === date;
+                return (
+                  <div key={day} className={`calendar-cell ${isDayToday ? 'today-cell' : ''}`}>
+                    <strong style={{ fontSize: '1.3rem', fontWeight: '800', color: '#0f2147' }}>{day}</strong>
+                    <div style={{ fontSize: '0.9rem', color: '#64748b', marginBottom: '8px', fontWeight: '600' }}>{new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</div>
+                    {schedules.length > 0 ? (
+                      schedules.map((slot, idx) => (
+                        <div key={idx} className="calendar-event-item">
+                          <span className="event-time" style={{ fontWeight: '600' }}>{formatTime12Hour(slot.time)}</span>
+                          <span className="event-title" style={{ fontWeight: '600' }}>{slot.title}</span>
+                        </div>
+                      ))
+                    ) : (
+                      <div style={{ fontSize: '0.9rem', color: '#94a3b8', fontStyle: 'italic', fontWeight: '500' }}>No masses</div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           ) : (
-            <div className="calendar-grid">
-              <div className="section-heading">Today's Schedule</div>
+            <div style={{ padding: '20px' }}>
+              <div className="section-heading" style={{ marginBottom: '20px', fontSize: '1.4rem', fontWeight: '800', color: '#0f2147' }}>Today's Schedule - {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</div>
               {getTodaySchedule().length > 0 ? (
-                getTodaySchedule().map((slot, index) => (
-                  <div key={index} className="calendar-cell">
-                    <span className="event-time">{slot.time}</span>
-                    <span className="event-title">{slot.title}</span>
-                  </div>
-                ))
+                <div style={{ display: 'grid', gap: '12px' }}>
+                  {getTodaySchedule().map((slot, idx) => (
+                    <div key={idx} className="calendar-event-item" style={{ padding: '16px' }}>
+                      <span className="event-time" style={{ fontSize: '1.2rem', fontWeight: '700', color: '#0f2147' }}>{formatTime12Hour(slot.time)}</span>
+                      <span className="event-title" style={{ fontSize: '1.1rem', fontWeight: '600', color: '#1e3a5f' }}>{slot.title}</span>
+                      {slot.celebrant && <div style={{ fontSize: '0.95rem', fontWeight: '500', color: '#4a5568', marginTop: '6px' }}>Celebrant: {slot.celebrant}</div>}
+                    </div>
+                  ))}
+                </div>
               ) : (
-                <p className="body-text">No masses scheduled for today.</p>
+                <div className="panel" style={{ padding: '40px', textAlign: 'center', background: '#f8fbff' }}>
+                  <p className="body-text" style={{ fontSize: '1.1rem', fontWeight: '600' }}>No masses scheduled for today.</p>
+                </div>
               )}
             </div>
           )}

@@ -44,11 +44,6 @@ function SupportPage() {
 
         <div className="support-cards">
           <div className="resource-card">
-            <strong>Mastering Sacramental Records</strong>
-            <p className="body-text">Learn the protocols for digitizing and archiving parish registers with our step-by-step guide.</p>
-            <button className="ghost-link" type="button" onClick={() => handleGuideClick('Mastering Sacramental Records')}>Read Full Guide</button>
-          </div>
-          <div className="resource-card">
             <strong>Optimizing Priest Management</strong>
             <p className="body-text">Effectively coordinate multi-parish clergy schedules and mass intentions for festive seasons.</p>
             <button className="ghost-link" type="button" onClick={() => handleGuideClick('Optimizing Priest Management')}>Learn More</button>

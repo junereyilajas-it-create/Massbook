@@ -754,6 +754,52 @@ textarea {
   transition: all 0.3s ease;
 }
 
+
+/* Topbar profile */
+.topbar-profile {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+}
+
+.topbar-profile-button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: transparent;
+  border: none;
+  padding: 6px 8px;
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+.topbar-profile-button img {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgba(15,33,71,0.06);
+  box-shadow: 0 8px 20px rgba(15,33,71,0.12);
+}
+
+.topbar-name {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  color: #0f2147;
+  text-decoration: none;
+}
+
+.topbar-name div:first-child {
+  line-height: 1;
+}
+
+.profile-menu .profile-menu-item:first-child {
+  font-weight: 800;
+}
+
+
 .hero-dashboard-card {
   min-height: 340px;
 }
@@ -1512,6 +1558,35 @@ textarea {
 
 .event-booking-grid {
   grid-template-columns: 1.5fr 0.85fr;
+}
+
+/* Date picker calendar styling */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(0);
+  cursor: pointer;
+}
+
+input[type="date"]::-webkit-datetime-edit {
+  color: #10203d;
+}
+
+input[type="date"]::-webkit-datetime-edit-fields-wrapper {
+  background: #ffffff;
+}
+
+input[type="date"]::-webkit-datetime-edit-text {
+  color: #10203d;
+}
+
+input[type="date"]::-webkit-datetime-edit-month-field,
+input[type="date"]::-webkit-datetime-edit-day-field,
+input[type="date"]::-webkit-datetime-edit-year-field {
+  color: #10203d;
+}
+
+/* Force date picker to use light theme */
+input[type="date"] {
+  color-scheme: light;
 }
 
 .schedule-page {
