@@ -170,7 +170,7 @@ app.get('/api/schedules', async (req, res) => {
 
     const [rows] = await pool.query(`
 
-      SELECT id, DATE_FORMAT(event_date, '%Y-%m-%d') AS event_date, day, time, title, description, celebrant, requester, stipend, notes
+      SELECT id, DATE_FORMAT(event_date, '%Y-%m-%d') AS event_date, day, time, title, description, celebrant, requester, stipend, notes, COALESCE(status, 'scheduled') AS status
 
       FROM schedules
 
@@ -194,7 +194,7 @@ app.post('/api/schedules', async (req, res) => {
 
   try {
 
-    const { event_date, day, time, title, description, celebrant, requester, stipend, notes } = req.body;
+    const { event_date, day, time, title, description, celebrant, requester, stipend, notes, status } = req.body;
 
     if (!event_date || !time || !title) {
 
@@ -202,25 +202,65 @@ app.post('/api/schedules', async (req, res) => {
 
     }
 
+    const normalizedStatus = typeof status === 'string' && status.trim() ? status.trim() : 'scheduled';
+
 
 
     const [result] = await pool.query(
 
-      `INSERT INTO schedules (event_date, day, time, title, description, celebrant, requester, stipend, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO schedules (event_date, day, time, title, description, celebrant, requester, stipend, notes, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 
-      [event_date, day, time, title, description ?? '', celebrant ?? '', requester ?? '', stipend ?? '', notes ?? '']
+      [event_date, day, time, title, description ?? '', celebrant ?? '', requester ?? '', stipend ?? '', notes ?? '', normalizedStatus]
 
     );
 
 
 
-    const [rows] = await pool.query('SELECT * FROM schedules WHERE id = ?', [result.insertId]);
+    const [rows] = await pool.query('SELECT id, DATE_FORMAT(event_date, \'%Y-%m-%d\') AS event_date, day, time, title, description, celebrant, requester, stipend, notes, COALESCE(status, \'scheduled\') AS status FROM schedules WHERE id = ?', [result.insertId]);
 
     res.status(201).json(rows[0]);
 
   } catch (error) {
 
     res.status(500).json({ message: 'Error creating schedule', error: error.message });
+
+  }
+
+});
+
+
+
+app.patch('/api/schedules/:id', async (req, res) => {
+
+  try {
+
+    const { id } = req.params;
+
+    const { status } = req.body;
+
+    if (typeof status !== 'string' || !status.trim()) {
+
+      return res.status(400).json({ message: 'Status is required.' });
+
+    }
+
+    const normalizedStatus = status.trim();
+
+    await pool.query('UPDATE schedules SET status = ? WHERE id = ?', [normalizedStatus, id]);
+
+    const [rows] = await pool.query('SELECT id, DATE_FORMAT(event_date, \'%Y-%m-%d\') AS event_date, day, time, title, description, celebrant, requester, stipend, notes, COALESCE(status, \'scheduled\') AS status FROM schedules WHERE id = ?', [id]);
+
+    if (rows.length === 0) {
+
+      return res.status(404).json({ message: 'Schedule not found.' });
+
+    }
+
+    res.json(rows[0]);
+
+  } catch (error) {
+
+    res.status(500).json({ message: 'Error updating schedule', error: error.message });
 
   }
 
@@ -296,7 +336,7 @@ app.get('/api/requests/:id', async (req, res) => {
 
       massType: request.type || 'Event',
 
-      preferredCelebrant: request.celebrant || 'To be assigned',
+      preferredCelebrant: request.celebrant || 'Fr. Niel Limbaco',
 
       location: request.location || 'Parish Hall',
 
@@ -432,7 +472,7 @@ app.post('/api/requests/:id/approve', async (req, res) => {
 
         event.description || '',
 
-        event.celebrant || 'To be assigned',
+        event.celebrant || 'Fr. Niel Limbaco',
 
         event.requester_name || '',
 
@@ -526,6 +566,8 @@ app.post('/api/bookings', async (req, res) => {
 
       location,
 
+      celebrant,
+
       type,
 
       title,
@@ -588,6 +630,8 @@ app.post('/api/bookings', async (req, res) => {
 
     const normalizedLocation = typeof location === 'string' ? location.trim() : '';
 
+    const normalizedCelebrant = typeof celebrant === 'string' && celebrant.trim() ? celebrant.trim() : 'Fr. Niel Limbaco';
+
     const normalizedNotes = typeof notes === 'string' ? notes.trim() : '';
 
 
@@ -624,9 +668,11 @@ app.post('/api/bookings', async (req, res) => {
 
         location,
 
+        celebrant,
+
         notes
 
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)` ,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)` ,
 
       [
 
@@ -657,6 +703,8 @@ app.post('/api/bookings', async (req, res) => {
         end_time ?? start_time,
 
         normalizedLocation,
+
+        normalizedCelebrant,
 
         normalizedNotes,
 

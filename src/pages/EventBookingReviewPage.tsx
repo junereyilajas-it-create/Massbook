@@ -7,6 +7,7 @@ import MainLayout from '../components/MainLayout';
 import TopBar from '../components/TopBar';
 
 import { apiFetch } from '../utils/api';
+import { formatDateKey } from '../utils/dateUtils';
 
 import { clearBookingDraft, loadBookingDraft } from '../utils/bookingStorage';
 
@@ -197,7 +198,7 @@ function EventBookingReviewPage() {
     const selectedLocation = bookingDraft.location?.trim() || 'Not specified';
     const selectedDate = bookingDraft.eventDate && bookingDraft.eventDate !== 'to-be-announced'
       ? bookingDraft.eventDate
-      : new Date().toISOString().split('T')[0];
+      : formatDateKey(new Date());
 
     return {
       event_type_id: eventTypeMap[bookingDraft.eventType] || 1,
@@ -211,7 +212,8 @@ function EventBookingReviewPage() {
       start_time: parseLegacyTime(bookingDraft.eventTime || '2:00 PM'),
       end_time: parseLegacyTime(bookingDraft.eventTime || '2:00 PM'),
       location: selectedLocation,
-      submitted_date: new Date().toISOString().split('T')[0],
+      celebrant: 'Fr. Niel Limbaco',
+      submitted_date: formatDateKey(new Date()),
       notes: [
         bookingDraft.notes || '',
         `Variant: ${variantLabel}`,

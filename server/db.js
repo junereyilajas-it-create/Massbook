@@ -178,11 +178,23 @@ export async function initializeDatabase() {
 
         notes TEXT,
 
+        status VARCHAR(20) NOT NULL DEFAULT 'scheduled',
+
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 
       ) ENGINE=InnoDB
 
     `);
+
+    const [scheduleColumns] = await initConnection.query(`
+      SELECT COLUMN_NAME
+      FROM information_schema.COLUMNS
+      WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'schedules' AND COLUMN_NAME = 'status'
+    `, [database]);
+
+    if (scheduleColumns.length === 0) {
+      await initConnection.query(`ALTER TABLE schedules ADD COLUMN status VARCHAR(20) NOT NULL DEFAULT 'scheduled'`);
+    }
 
 
 

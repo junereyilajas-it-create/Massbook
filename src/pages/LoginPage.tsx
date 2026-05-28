@@ -14,6 +14,8 @@ function LoginPage() {
 
   const [password, setPassword] = useState('');
 
+  const [showPassword, setShowPassword] = useState(false);
+
   const [remember, setRemember] = useState(false);
 
   const [error, setError] = useState('');
@@ -250,27 +252,75 @@ function LoginPage() {
 
           </label>
 
-          <input
+          <div className="password-input-wrapper">
 
-            id="login-password"
+            <input
 
-            className="input-field"
+              id="login-password"
 
-            type="password"
+              className="input-field password-input"
 
-            autoComplete="current-password"
+              type={showPassword ? 'text' : 'password'}
 
-            placeholder="••••••••"
+              autoComplete="current-password"
 
-            value={password}
+              placeholder="••••••••"
 
-            onChange={(event) => setPassword(event.target.value)}
+              value={password}
 
-            aria-invalid={!!passwordError}
+              onChange={(event) => setPassword(event.target.value)}
 
-            aria-describedby={passwordError ? 'password-error' : undefined}
+              aria-invalid={!!passwordError}
 
-          />
+              aria-describedby={passwordError ? 'password-error' : undefined}
+
+            />
+
+            <button
+
+              type="button"
+
+              className="password-toggle-button"
+
+              onClick={() => setShowPassword((currentValue) => !currentValue)}
+
+              aria-label={showPassword ? 'Hide password' : 'Show password'}
+
+              aria-pressed={showPassword}
+
+            >
+
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+
+                {showPassword ? (
+
+                  <>
+
+                    <path d="M2.3 12.4C3.4 9.9 6.2 7 12 7s8.6 2.9 9.7 5.4c.2.5.2 1.1 0 1.6C20.6 17.1 17.8 20 12 20S3.4 17.1 2.3 13.6a1.8 1.8 0 0 1 0-1.6Z" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+
+                    <circle cx="12" cy="14" r="3.2" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+
+                  </>
+
+                ) : (
+
+                  <>
+
+                    <path d="M3 3l18 18" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+
+                    <path d="M12 7c5.8 0 8.6 2.9 9.7 5.4.2.5.2 1.1 0 1.6C20.6 17.1 17.8 20 12 20c-5.8 0-8.6-2.9-9.7-5.4a1.8 1.8 0 0 1 0-1.6C3.4 9.9 6.2 7 12 7Z" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+
+                    <circle cx="12" cy="14" r="3.2" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+
+                  </>
+
+                )}
+
+              </svg>
+
+            </button>
+
+          </div>
 
           {passwordError && (
 

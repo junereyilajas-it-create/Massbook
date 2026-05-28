@@ -296,6 +296,35 @@ textarea:focus-visible {
   color: #445277;
 }
 
+.password-input-wrapper {
+  position: relative;
+}
+
+.password-input {
+  padding-right: 46px;
+}
+
+.password-toggle-button {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: #445277;
+  cursor: pointer;
+  border-radius: 999px;
+  padding: 4px;
+}
+
+.password-toggle-button svg {
+  width: 20px;
+  height: 20px;
+}
+
 .input-field,
 .select-field,
 textarea {

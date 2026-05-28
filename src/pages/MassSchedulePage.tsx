@@ -10,6 +10,8 @@ import { matchesQuery } from '../utils/searchRecords';
 
 import { apiFetch } from '../utils/api';
 
+import { formatDateKey } from '../utils/dateUtils';
+
 import { Calendar } from 'lucide-react';
 
 
@@ -62,7 +64,7 @@ function MassSchedulePage() {
 
     const today = new Date();
 
-    const todayStr = today.toISOString().split('T')[0];
+    const todayStr = formatDateKey(today);
 
     
 
@@ -80,7 +82,7 @@ function MassSchedulePage() {
 
       startOfWeek.setDate(today.getDate() - today.getDay());
 
-      const startOfWeekStr = startOfWeek.toISOString().split('T')[0];
+      const startOfWeekStr = formatDateKey(startOfWeek);
 
       
 
@@ -88,7 +90,7 @@ function MassSchedulePage() {
 
       endOfWeek.setDate(startOfWeek.getDate() + 6);
 
-      const endOfWeekStr = endOfWeek.toISOString().split('T')[0];
+      const endOfWeekStr = formatDateKey(endOfWeek);
 
       
 
@@ -102,13 +104,13 @@ function MassSchedulePage() {
 
       const startOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
 
-      const startOfMonthStr = startOfMonth.toISOString().split('T')[0];
+      const startOfMonthStr = formatDateKey(startOfMonth);
 
       
 
       const endOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
 
-      const endOfMonthStr = endOfMonth.toISOString().split('T')[0];
+      const endOfMonthStr = formatDateKey(endOfMonth);
 
       
 
@@ -276,7 +278,7 @@ function MassSchedulePage() {
 
   const getScheduleForDay = (date: Date) => {
 
-    const dateStr = date.toISOString().split('T')[0];
+    const dateStr = formatDateKey(date);
 
     return filteredSlots.filter(slot => slot.event_date === dateStr);
 
@@ -574,7 +576,7 @@ function MassSchedulePage() {
 
                   {getWeekSchedule().map(({ day, date, schedules }) => {
 
-                    const isDayToday = new Date().toISOString().split('T')[0] === date;
+                    const isDayToday = formatDateKey(new Date()) === date;
 
                     return (
 

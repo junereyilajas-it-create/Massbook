@@ -3,6 +3,7 @@ import MainLayout from '../components/MainLayout';
 import TopBar from '../components/TopBar';
 import { Link } from 'react-router-dom';
 import { apiFetch } from '../utils/api';
+import { formatDateKey } from '../utils/dateUtils';
 
 interface PendingRequest {
   id: number;
@@ -99,13 +100,13 @@ function AdminDashboardPage() {
   };
 
   const getScheduleForDay = (date: Date) => {
-    const dateStr = date.toISOString().split('T')[0];
+    const dateStr = formatDateKey(date);
     return schedule.filter(slot => slot.event_date === dateStr);
   };
 
   const getTodaySchedule = () => {
     const today = new Date();
-    const todayStr = today.toISOString().split('T')[0];
+    const todayStr = formatDateKey(today);
     return schedule
       .filter(slot => slot.event_date === todayStr)
       .sort((a, b) => a.time.localeCompare(b.time));
@@ -315,7 +316,7 @@ function AdminDashboardPage() {
             ) : viewMode === 'weekly' ? (
               <div className="calendar-row body-row">
                 {getWeekSchedule().map(({ day, date, schedules }) => {
-                  const isCurrentDay = new Date().toISOString().split('T')[0] === date;
+                  const isCurrentDay = formatDateKey(new Date()) === date;
                   return (
                     <div key={day} className={`calendar-cell ${isCurrentDay ? 'today-cell' : ''}`}>
                       <strong style={{ fontSize: '1.1rem', fontWeight: '800', color: '#0f2147' }}>{day}</strong>

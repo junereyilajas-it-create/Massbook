@@ -16,6 +16,7 @@ type MassEntry = {
   requester: string;
   stipend: string;
   notes: string;
+  status?: 'scheduled' | 'done';
 };
 
 const initialFormState: MassEntry = {
@@ -27,6 +28,7 @@ const initialFormState: MassEntry = {
   requester: '',
   stipend: 'Standard',
   notes: '',
+  status: 'scheduled',
 };
 
 function AdminMassSchedulePage() {
@@ -52,6 +54,30 @@ function AdminMassSchedulePage() {
     const ampm = hour >= 12 ? 'PM' : 'AM';
     const hour12 = hour % 12 || 12;
     return `${hour12}:${minutes} ${ampm}`;
+  };
+
+  const getStatusPillClass = (status?: string) => status === 'done' ? 'status-pill success' : 'status-pill pending';
+
+  const getStatusLabel = (status?: string) => status === 'done' ? 'Done' : 'Scheduled';
+
+  const handleMarkMassDone = async (id?: number) => {
+    if (typeof id !== 'number') {
+      return;
+    }
+
+    try {
+      const updatedSlot = await apiFetch(`/schedules/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status: 'done' }),
+      });
+
+      setSchedule((prev) => prev.map((slot) => slot.id === id ? { ...slot, ...updatedSlot } : slot));
+      setSuccessMessage('Mass marked as done.');
+      setShowSuccessModal(true);
+    } catch (error) {
+      setSuccessMessage(`Could not update mass: ${(error as Error).message}`);
+      setShowSuccessModal(true);
+    }
   };
 
   const getFilteredSlots = () => {
@@ -418,9 +444,23 @@ function AdminMassSchedulePage() {
                     {daySchedule.length > 0 && (
                       <div className="calendar-events">
                         {daySchedule.map((slot, idx) => (
-                          <div key={idx} className="calendar-event-item">
-                            <span className="event-time" style={{ fontWeight: '600' }}>{formatTime12Hour(slot.time)}</span>
+                          <div key={idx} className="calendar-event-item" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+                              <span className="event-time" style={{ fontWeight: '600' }}>{formatTime12Hour(slot.time)}</span>
+                              <span className={getStatusPillClass(slot.status)}>{getStatusLabel(slot.status)}</span>
+                            </div>
                             <span className="event-title" style={{ fontWeight: '600' }}>{slot.title}</span>
+                            {slot.celebrant && <div style={{ fontSize: '0.95rem', fontWeight: '500', color: '#4a5568' }}>Celebrant: {slot.celebrant}</div>}
+                            {slot.status !== 'done' && typeof slot.id === 'number' && (
+                              <button
+                                type="button"
+                                className="button button-secondary small"
+                                onClick={() => handleMarkMassDone(slot.id)}
+                                style={{ marginTop: '4px', width: '100%', justifyContent: 'center' }}
+                              >
+                                Mark Done
+                              </button>
+                            )}
                           </div>
                         ))}
                       </div>
@@ -441,9 +481,23 @@ function AdminMassSchedulePage() {
                     <div style={{ fontSize: '0.9rem', color: '#64748b', marginBottom: '8px', fontWeight: '600' }}>{new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</div>
                     {schedules.length > 0 ? (
                       schedules.map((slot, idx) => (
-                        <div key={idx} className="calendar-event-item">
-                          <span className="event-time" style={{ fontWeight: '600' }}>{formatTime12Hour(slot.time)}</span>
+                        <div key={idx} className="calendar-event-item" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+                            <span className="event-time" style={{ fontWeight: '600' }}>{formatTime12Hour(slot.time)}</span>
+                            <span className={getStatusPillClass(slot.status)}>{getStatusLabel(slot.status)}</span>
+                          </div>
                           <span className="event-title" style={{ fontWeight: '600' }}>{slot.title}</span>
+                          {slot.celebrant && <div style={{ fontSize: '0.95rem', fontWeight: '500', color: '#4a5568' }}>Celebrant: {slot.celebrant}</div>}
+                          {slot.status !== 'done' && typeof slot.id === 'number' && (
+                            <button
+                              type="button"
+                              className="button button-secondary small"
+                              onClick={() => handleMarkMassDone(slot.id)}
+                              style={{ marginTop: '4px', width: '100%', justifyContent: 'center' }}
+                            >
+                              Mark Done
+                            </button>
+                          )}
                         </div>
                       ))
                     ) : (
@@ -459,10 +513,23 @@ function AdminMassSchedulePage() {
               {getTodaySchedule().length > 0 ? (
                 <div style={{ display: 'grid', gap: '12px' }}>
                   {getTodaySchedule().map((slot, idx) => (
-                    <div key={idx} className="calendar-event-item" style={{ padding: '16px' }}>
-                      <span className="event-time" style={{ fontSize: '1.2rem', fontWeight: '700', color: '#0f2147' }}>{formatTime12Hour(slot.time)}</span>
+                    <div key={idx} className="calendar-event-item" style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+                        <span className="event-time" style={{ fontSize: '1.2rem', fontWeight: '700', color: '#0f2147' }}>{formatTime12Hour(slot.time)}</span>
+                        <span className={getStatusPillClass(slot.status)}>{getStatusLabel(slot.status)}</span>
+                      </div>
                       <span className="event-title" style={{ fontSize: '1.1rem', fontWeight: '600', color: '#1e3a5f' }}>{slot.title}</span>
                       {slot.celebrant && <div style={{ fontSize: '0.95rem', fontWeight: '500', color: '#4a5568', marginTop: '6px' }}>Celebrant: {slot.celebrant}</div>}
+                      {slot.status !== 'done' && typeof slot.id === 'number' && (
+                        <button
+                          type="button"
+                          className="button button-secondary small"
+                          onClick={() => handleMarkMassDone(slot.id)}
+                          style={{ marginTop: '4px', width: 'fit-content' }}
+                        >
+                          Mark Done
+                        </button>
+                      )}
                     </div>
                   ))}
                 </div>
