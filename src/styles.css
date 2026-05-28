@@ -3012,10 +3012,11 @@ input[type="date"] {
   border-radius: 28px;
   overflow: hidden;
   box-shadow: 0 24px 60px rgba(15, 33, 71, 0.15);
-  min-height: 400px;
-  height: 100%;
+  aspect-ratio: 3 / 2;
+  min-height: 0;
+  height: auto;
   position: relative;
-  display: grid;
+  display: flex;
 }
 
 .landing-hero-visual img {

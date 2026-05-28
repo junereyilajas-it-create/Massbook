@@ -67,8 +67,8 @@ function LandingPage() {
         </div>
         <div className="landing-hero-visual">
           <img
-            src="https://i0.wp.com/christianpublishinghouse.co/wp-content/uploads/2019/11/jesus-baptism_the-baptism-of-jesus-by-john-1.png?fit=650%2C320&ssl=1"
-            alt="Baptism of Jesus"
+            src="https://scontent.fmnl46-1.fna.fbcdn.net/v/t39.30808-6/276156596_125507780061132_6269600553415109799_n.jpg?_nc_cat=106&ccb=1-7&_nc_sid=6ee11a&_nc_eui2=AeG9UfAzafALCboy4uwHQtt-wkSZm6otrfDCRJmbqi2t8JAgK9g3KbqdCvjQAoTZGu54LGxP_bHXtzSr8mWvor4f&_nc_ohc=Ol12-7ElUVgQ7kNvwF8Rexq&_nc_oc=AdpsGbSgzT1FY0Q1Yv8E1o0zOJPobUeK4IeimyS_25jYnlHhN3pY9HVxdFRBf-jbvGc&_nc_zt=23&_nc_ht=scontent.fmnl46-1.fna&_nc_gid=SFZYc6MYqFFhJfZEQKj6Eg&_nc_ss=7b2a8&oh=00_Af6qsy4VnXFCj9ntp0hOHWO3pYiRwr4SvfMPZivutceRuQ&oe=6A1D5B1C"
+            alt="logo of st.John"
             style={{ width: '100%', height: '100%', objectFit: 'cover' }}
           />
         </div>
